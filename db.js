@@ -1,3 +1,8 @@
+/**
+ * @ author: Sin Lin
+ * @ From CCU DM+ lab
+ */
+
 const mysql = require("mysql");
 
 const pool = mysql.createPool({
