@@ -45,6 +45,8 @@ io.on("connection", client => {
 
   client.on("question", sid => {
     /**
+     * @ author: Sin Lin
+     * @ From CCU DM+ lab
      * @ data : Story id
      * @ first step : connect data base and send sid to get question and qid.
      * @ send {qid : qid, question : question } to client
@@ -88,6 +90,8 @@ io.on("connection", client => {
 
   client.on("answer", data => {
     /**
+     * @ author: Sin Lin
+     * @ From CCU DM+ lab
      * @ Check whether user's answer is correct or not
      * @ data -> {qid: qid, userInput: userInput}
      * @ return yes or no
