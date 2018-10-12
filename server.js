@@ -12,7 +12,6 @@ const http = require("http").Server(app);
 const io = require("socket.io")(http);
 const db = require("./db.js");
 
-// db.connect();
 
 /**
  * ==== Create HTTP Server ====
@@ -30,11 +29,17 @@ app.get("/", (req, res) => {
  */
 
 app.get("/storyInfo", (req, res) => {
+  /**
+   * @ story info
+   */
   db.getAllStoriesInfo()
     .then(result => {
-      res.json({ stories: result });
+      res.json({
+        stories: result
+      });
     })
     .catch(err => {
+      console.log(err);
       throw err;
     });
 });
@@ -55,30 +60,35 @@ io.on("connection", client => {
      * @ first step : connect data base and send sid to get question and qid.
      * @ send {qid : qid, question : question } to client
      */
-    function emitQuestion(result) {
+
+    const getRandNumber = (max_num) => {
+      return Math.floor(Math.random() * max_num);
+    }
+
+    const emitQuestion = (result) => {
       let data;
       if (result.length !== 0) {
-        let randNumber = Math.floor(Math.random() * result.length);
-        // console.log(randNumber);
 
+        let randNumber = getRandNumber(result.length);
         data = result[randNumber].q_name + "," + result[randNumber].qid;
 
-        console.log("question: " + data);
+        console.log("question:\n" + data);
       }
       io.to(clientID).emit("question", data);
     }
 
     console.log(`sid: ${sid}`);
 
-    let open_number = Math.floor(Math.random() * 3);
-    // console.log("open number" + open_number);
+    const MAX_Q_NUM = 3;
+    let question_kind = getRandNumber(MAX_Q_NUM);
 
-    if (open_number == 0) {
+    if (question_kind == 0) {
       db.getOpenQuestion(parseInt(sid))
         .then(result => {
           emitQuestion(result);
         })
         .catch(err => {
+          console.log(err);
           throw err;
         });
     } else {
@@ -87,6 +97,7 @@ io.on("connection", client => {
           emitQuestion(result);
         })
         .catch(err => {
+          console.log(err);
           throw err;
         });
     }

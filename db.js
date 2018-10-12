@@ -9,24 +9,15 @@ const pool = mysql.createPool({
   poolLimit: 10,
   host: "localhost",
   user: "root",
-  password: "123456",
-  database: "MORE"
+  password: "password",
+  database: "More"
 });
-
-// module.exports.connect = () => {
-//   pool.connect();
-// };
-
-// module.exports.disconnect = () => {
-//   pool.end();
-// };
 
 module.exports.getQuestion = sid => {
   return new Promise((resolve, reject) => {
-    let sql = `SELECT q_name,qid FROM question WHERE sid = ?;`;
+    let sql = `SELECT q_name,qid FROM Question WHERE sid = ?;`;
     pool.query(sql, sid, (err, result, field) => {
       if (err) reject(err);
-      // else resolve(JSON.parse(JSON.stringify(result)));
       else resolve(result);
     });
   });
@@ -44,7 +35,7 @@ module.exports.compareAnswer = (qid, userInput) => {
 
 module.exports.getAllStoriesInfo = () => {
   return new Promise((resolve, reject) => {
-    let sql = `SELECT * FROM story;`;
+    let sql = `SELECT * FROM Story;`;
     pool.query(sql, (err, result, field) => {
       if (err) reject(err);
       else resolve(result);
@@ -54,7 +45,7 @@ module.exports.getAllStoriesInfo = () => {
 
 module.exports.getOpenQuestion = sid => {
   return new Promise((resolve, reject) => {
-    let sql = `SELECT q_name,qid FROM question WHERE sid = ? and qid like 'A%'`;
+    let sql = `SELECT q_name,qid FROM Question WHERE sid = ? and qid like 'A%'`;
     pool.query(sql, sid, (err, result, field) => {
       if (err) reject(err);
       else resolve(result);
