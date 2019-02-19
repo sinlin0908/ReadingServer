@@ -12,6 +12,8 @@ const http = require("http").Server(app);
 const io = require("socket.io")(http);
 const db = require("./db.js");
 
+let question_count = 0;
+
 /**
  * ==== Create HTTP Server ====
  */
@@ -59,46 +61,58 @@ io.on("connection", client => {
      * @ first step : connect data base and send sid to get question and qid.
      * @ send {qid : qid, question : question } to client
      */
-
     const getRandNumber = max_num => {
       return Math.floor(Math.random() * max_num);
     };
-
     const emitQuestion = result => {
       let data;
       if (result.length !== 0) {
         let randNumber = getRandNumber(result.length);
         data = result[randNumber].q_name + "," + result[randNumber].qid;
 
-        console.log("question:\n" + data);
+        console.log("question:" + data);
       }
       io.to(clientID).emit("question", data);
     };
 
+    const getQuestionKind = () => {
+
+      const MAX_QUESTION_COUNT = 3;
+
+      question_count = question_count % MAX_QUESTION_COUNT;
+
+      console.log(question_count);
+      let question_kind;
+      switch (question_count) {
+        case 0: // yes/no question - A
+          question_kind = 'A%';
+          break;
+        case 1: // close     - B
+          question_kind = 'B%';
+          break;
+        case 2: // open data  -C
+          question_kind = 'C%';
+          break;
+      }
+
+      return question_kind;
+    }
+
     console.log(`sid: ${sid}`);
 
-    const MAX_Q_NUM = 3;
-    let question_kind = getRandNumber(MAX_Q_NUM);
+    let question_kind = getQuestionKind();
 
-    if (question_kind == 0) {
-      db.getOpenQuestion(parseInt(sid))
-        .then(result => {
-          emitQuestion(result);
-        })
-        .catch(err => {
-          console.log(err);
-          throw err;
-        });
-    } else {
-      db.getQuestion(parseInt(sid))
-        .then(result => {
-          emitQuestion(result);
-        })
-        .catch(err => {
-          console.log(err);
-          throw err;
-        });
-    }
+    db.getQuestion(sid, question_kind)
+      .then(result => {
+        emitQuestion(result);
+      })
+      .catch(err => {
+        console.log(err);
+        throw err;
+      });
+
+
+    question_count += 1;
   });
 
   client.on("answer", data => {
@@ -109,42 +123,65 @@ io.on("connection", client => {
      * @ data -> {qid: qid, userInput: userInput}
      * @ return yes or no
      */
+    console.log(`sid ${clientID} data: ${JSON.stringify(data)}`);
 
-    let qid;
+    let qid = String(data.qid);
 
-    if (String(data.qid).includes("C")) {
-      qid = data.qid;
+    const isOpenQuestion = (qid) => {
+      if (qid.startsWith("C")) {
+        return true;
+      } else {
+        return false;
+      }
+    };
 
+    const emitOpenResponse = (result) => {
+      if (result.length !== 0) {
+        let response = result[0];
+        console.log(response);
+
+        io.to(clientID).emit("response", response);
+      } else {
+        console.log("aaaa");
+        let response = {
+          a_content: "小朋友很棒喔"
+        };
+        io.to(clientID).emit("response", response);
+      }
+    };
+
+    const emitAnswer = (result) => {
+      let ans;
+      if (result.length !== 0) {
+        ans = "yes";
+      } else {
+        ans = "no";
+      }
+      io.to(clientID).emit("result", ans);
+    };
+
+    if (isOpenQuestion(qid)) {
       db.getOpenQuestionResponse(qid)
         .then(result => {
-          if (result.length !== 0) {
-            let response = result[0];
-
-            console.log(response);
-
-            io.to(clientID).emit("response", response);
-          }
+          emitOpenResponse(result);
         })
         .catch(err => {
+          console.log(err);
+          throw err;
+        })
+    } else {
+      let user_input = data.userInput;
+
+      db.compareAnswer(qid, user_input)
+        .then(result => {
+          emitAnswer(result);
+        })
+        .catch(err => {
+          console.log(err);
           throw err;
         });
-    } else {
-      qid = data.qid;
-      let userInput = data.userInput;
-
-      console.log(`User id: ${clientID},qid: ${qid}, answer: ${userInput}`);
-
-      let r;
-
-      db.compareAnswer(qid, userInput).then(result => {
-        if (result.length !== 0) {
-          r = "yes";
-        } else {
-          r = "no";
-        }
-        io.to(clientID).emit("result", r);
-      });
     }
+
   });
 
   client.on("disconnect", () => {

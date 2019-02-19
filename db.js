@@ -13,15 +13,6 @@ const pool = mysql.createPool({
   database: "More"
 });
 
-module.exports.getQuestion = sid => {
-  return new Promise((resolve, reject) => {
-    let sql = `SELECT q_name,qid FROM Question WHERE sid = ?;`;
-    pool.query(sql, sid, (err, result, field) => {
-      if (err) reject(err);
-      else resolve(result);
-    });
-  });
-};
 
 module.exports.compareAnswer = (qid, userInput) => {
   return new Promise((resolve, reject) => {
@@ -43,9 +34,29 @@ module.exports.getAllStoriesInfo = () => {
   });
 };
 
+// module.exports.getQuestion = sid => {
+//   return new Promise((resolve, reject) => {
+//     let sql = `SELECT q_name,qid FROM Question WHERE sid = ?;`;
+//     pool.query(sql, sid, (err, result, field) => {
+//       if (err) reject(err);
+//       else resolve(result);
+//     });
+//   });
+// };
+
+module.exports.getQuestion = (sid, kind) => {
+  return new Promise((resolve, reject) => {
+    let sql = `SELECT q_name,qid FROM Question WHERE sid = ? and qid like '${kind}';`;
+    pool.query(sql, sid, (err, result, field) => {
+      if (err) reject(err);
+      else resolve(result);
+    });
+  });
+};
+
 module.exports.getOpenQuestion = sid => {
   return new Promise((resolve, reject) => {
-    let sql = `SELECT q_name,qid FROM Question WHERE sid = ? and qid like 'A%'`;
+    let sql = `SELECT q_name,qid FROM Question WHERE sid = ? and qid like 'C%'`;
     pool.query(sql, sid, (err, result, field) => {
       if (err) reject(err);
       else resolve(result);
